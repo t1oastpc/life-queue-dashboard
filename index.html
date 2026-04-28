@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Life Queue Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <div class="app-shell">
+      <header class="top-bar">
+        <div class="top-left">
+          <button class="back-link" type="button">Back //</button>
+          <span class="top-title">PLAY</span>
+        </div>
+
+        <nav class="top-nav" aria-label="Primary navigation" role="tablist">
+          <button
+            id="nav-queue"
+            class="nav-tab active"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="queue"
+            tabindex="0"
+            data-tab="queue"
+          >
+            Queue
+          </button>
+
+          <button
+            id="nav-overview"
+            class="nav-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="overview"
+            tabindex="-1"
+            data-tab="overview"
+          >
+            Career
+          </button>
+
+          <button
+            id="nav-progress"
+            class="nav-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="progress"
+            tabindex="-1"
+            data-tab="progress"
+          >
+            Progress
+          </button>
+        </nav>
+
+        <div class="top-right">
+          <button
+            id="openSettings"
+            class="settings-button"
+            type="button"
+            aria-label="Open settings"
+          >
+            <span></span>
+          </button>
+        </div>
+      </header>
+
+      <main class="page-stage">
+        <!-- QUEUE -->
+        <section
+          id="queue"
+          class="tab-panel active"
+          role="tabpanel"
+          aria-labelledby="nav-queue"
+        >
+          <section class="queue-stage">
+            <aside class="queue-left-hud" aria-label="Queue status">
+              <div class="queue-left-label">Queue</div>
+
+              <div class="queue-left-stack">
+                <button
+                  id="openQueuePicker"
+                  class="queue-left-row queue-left-row-button"
+                  type="button"
+                  aria-haspopup="dialog"
+                  aria-controls="queuePickerOverlay"
+                >
+                  <strong id="currentQueueButtonLabel">Physical</strong>
+                </button>
+
+                <div class="queue-left-row">
+                  <strong id="nextSalah">Dhuhr in 58m</strong>
+                </div>
+
+                <div class="queue-left-row">
+                  <strong id="queueDayDoneInline">0%</strong>
+                </div>
+              </div>
+            </aside>
+
+            <div class="queue-center-column">
+              <div class="queue-banner">
+                <span>Life operating system</span>
+                <strong id="bannerMessage">Next salah: Dhuhr in 58m</strong>
+              </div>
+
+              <section class="queue-party-lane" aria-label="Player lane">
+                <div class="queue-empty-slot queue-empty-slot-outer"><span>+</span></div>
+                <div class="queue-empty-slot queue-empty-slot-inner"><span>+</span></div>
+
+                <article class="queue-player-card" aria-label="Current player card">
+                  <div class="queue-player-banner-art">
+                    <img src="./assets/woman-card.png" alt="" />
+                  </div>
+
+                  <div class="queue-player-ready" id="queueCardReadyState">READY</div>
+
+                  <div class="queue-nameplate">
+                    <strong id="queuePlayerName">Abdullahi</strong>
+                  </div>
+
+                  <div class="queue-rank-badge-wrap">
+                    <img
+                      id="rankImage"
+                      class="queue-rank-image"
+                      src="./assets/iron1.png"
+                      alt="Current rank icon"
+                    />
+                  </div>
+                </article>
+
+                <div class="queue-empty-slot queue-empty-slot-inner"><span>+</span></div>
+                <div class="queue-empty-slot queue-empty-slot-outer"><span>+</span></div>
+              </section>
+
+              <div class="queue-bottom-actions" aria-label="Queue actions">
+                <button id="queueModeButton" class="queue-action secondary" type="button">
+                  <strong>PRACTICE</strong>
+                </button>
+
+                <button id="queueNow" class="queue-action primary" type="button">
+                  <strong>QUEUE</strong>
+                </button>
+
+                <button id="queueToCareer" class="queue-action secondary" type="button">
+                  <strong>CAREER</strong>
+                </button>
+              </div>
+            </div>
+
+            <aside class="queue-side-spacer" aria-hidden="true"></aside>
+          </section>
+        </section>
+
+        <!-- CAREER -->
+        <section
+          id="overview"
+          class="tab-panel"
+          role="tabpanel"
+          aria-labelledby="nav-overview"
+        >
+          <div class="overview-career-shell" id="careerShell"></div>
+        </section>
+
+        <!-- PHYSICAL -->
+        <section id="physical" class="tab-panel" role="tabpanel">
+          <div class="content-grid split-panel-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Physical</span>
+                  <h2>Daily physical log</h2>
+                </div>
+              </div>
+              <div class="task-stack" id="physicalTaskStack"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Completion</span>
+                  <h2>Completed today</h2>
+                </div>
+              </div>
+              <div class="completed-stack" id="physicalCompletedStack"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- DEEN -->
+        <section id="deen" class="tab-panel" role="tabpanel">
+          <div class="content-grid split-panel-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Deen</span>
+                  <h2>Daily deen log</h2>
+                </div>
+              </div>
+              <div class="task-stack" id="deenTaskStack"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Completion</span>
+                  <h2>Completed today</h2>
+                </div>
+              </div>
+              <div class="completed-stack" id="deenCompletedStack"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ROUTINES -->
+        <section id="routines" class="tab-panel" role="tabpanel">
+          <div class="content-grid split-panel-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Routines</span>
+                  <h2>Daily routine log</h2>
+                </div>
+              </div>
+              <div class="task-stack" id="routinesTaskStack"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Completion</span>
+                  <h2>Completed today</h2>
+                </div>
+              </div>
+              <div class="completed-stack" id="routinesCompletedStack"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- SUPPLEMENTS -->
+        <section id="supplements" class="tab-panel" role="tabpanel">
+          <div class="content-grid split-panel-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Supplements</span>
+                  <h2>Daily supplements log</h2>
+                </div>
+              </div>
+              <div class="task-stack" id="supplementsTaskStack"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Completion</span>
+                  <h2>Completed today</h2>
+                </div>
+              </div>
+              <div class="completed-stack" id="supplementsCompletedStack"></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- PROGRESS -->
+        <section
+          id="progress"
+          class="tab-panel"
+          role="tabpanel"
+          aria-labelledby="nav-progress"
+        >
+          <div class="weight-progress-shell">
+            <section
+  id="progress"
+  class="tab-panel"
+  role="tabpanel"
+  aria-labelledby="nav-progress"
+>
+  <div class="weight-progress-shell">
+    <div class="weight-progress-main">
+      <aside class="weight-progress-sidebar">
+        ...
+      </aside>
+
+      <section class="weight-progress-chart-card">
+        ...
+      </section>
+    </div>
+
+    <div class="weight-progress-footer">
+      ...
+    </div>
+  </div>
+</section>
+
+            <div class="weight-progress-main">
+              <aside class="weight-progress-sidebar">
+                <div class="weight-stat-block">
+                  <span>CURRENT WEIGHT</span>
+                  <strong id="weightCurrentBig">0.0</strong>
+                  <em>LB</em>
+                </div>
+
+                <div class="weight-stat-block small">
+                  <span>STARTING WEIGHT</span>
+                  <strong id="weightStartBig">0.0</strong>
+                  <em>LB</em>
+                </div>
+
+                <div class="weight-stat-block small">
+                  <span>GOAL WEIGHT</span>
+                  <strong id="weightGoalBig">220.0</strong>
+                  <em>LB</em>
+                </div>
+
+                <div class="weight-divider"></div>
+
+                <div class="weight-stat-block small">
+                  <span>TOTAL CHANGE</span>
+                  <strong id="weightLossBig">0.0</strong>
+                  <em>LB</em>
+                </div>
+
+                <div class="weight-stat-block small">
+                  <span>CHANGE %</span>
+                  <strong id="weightLossPercent">0.0%</strong>
+                </div>
+
+                <div class="weight-stat-block small">
+                  <span>TO GOAL</span>
+                  <strong id="weightToGoal">0.0</strong>
+                  <em>LB</em>
+                </div>
+              </aside>
+
+              <section class="weight-progress-chart-card">
+                <div class="weight-chart-top">
+                  <div>
+                    <h3>WEIGHT OVER TIME</h3>
+                  </div>
+
+                  <div class="weight-chart-controls">
+                    <div class="weight-chart-legend">
+                      <span><i class="legend-line legend-line-main"></i> DAILY WEIGHT</span>
+                      <span><i class="legend-line legend-line-avg"></i> 7-DAY MOVING AVERAGE</span>
+                    </div>
+
+                    <div class="progress-range-switch" role="tablist" aria-label="Weight range">
+                      <button class="progress-range-btn active" type="button" data-range="daily">DAILY</button>
+                      <button class="progress-range-btn" type="button" data-range="weekly">WEEKLY</button>
+                      <button class="progress-range-btn" type="button" data-range="monthly">MONTHLY</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="weight-chart-wrap">
+                  <canvas id="weightChart" width="1200" height="520"></canvas>
+                  <div id="weightChartTooltip" class="chart-tooltip hidden"></div>
+                </div>
+              </section>
+            </div>
+
+            <div class="weight-progress-footer">
+              <div class="weight-footer-card">
+                <span>BEST STREAK</span>
+                <strong id="bestWeightStreak">0</strong>
+                <em>DAYS</em>
+              </div>
+
+              <div class="weight-footer-card">
+                <span>AVG. LOSS / WEEK</span>
+                <strong id="avgLossWeek">0.00</strong>
+                <em>LB</em>
+              </div>
+
+              <div class="weight-footer-card">
+                <span>TO GOAL</span>
+                <strong id="weightToGoalFooter">0.0</strong>
+                <em>LB</em>
+              </div>
+
+              <div class="weight-footer-card">
+                <span>EST. GOAL DATE</span>
+                <strong id="goalDateEstimate">--</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- QUEUE PICKER -->
+    <div id="queuePickerOverlay" class="queue-picker-overlay hidden" aria-hidden="true">
+      <div
+        class="queue-picker-shell"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="queuePickerTitle"
+      >
+        <div class="queue-picker-top">
+          <div class="queue-picker-title-wrap">
+            <span class="eyebrow">Choose a queue</span>
+            <h2 id="queuePickerTitle">Choose a Queue</h2>
+          </div>
+
+          <button
+            id="closeQueuePicker"
+            class="queue-picker-close"
+            type="button"
+            aria-label="Close queue picker"
+          >
+            ×
+          </button>
+        </div>
+
+        <p class="queue-picker-help">Pick what you want to queue into.</p>
+
+        <div class="queue-picker-grid" aria-label="Queue choices">
+          <button class="queue-choice-card selected" type="button" data-queue-choice="physical">
+            <div class="queue-choice-art physical-art"></div>
+            <div class="queue-choice-copy">
+              <strong>Physical</strong>
+              <span>Gym, calories, sleep, water, weight</span>
+            </div>
+          </button>
+
+          <button class="queue-choice-card" type="button" data-queue-choice="deen">
+            <div class="queue-choice-art deen-art"></div>
+            <div class="queue-choice-copy">
+              <strong>Deen</strong>
+              <span>Salah, Quran, Tahajjud</span>
+            </div>
+          </button>
+
+          <button class="queue-choice-card" type="button" data-queue-choice="routines">
+            <div class="queue-choice-art routines-art"></div>
+            <div class="queue-choice-copy">
+              <strong>Routines</strong>
+              <span>Morning acne, night acne, screen time</span>
+            </div>
+          </button>
+
+          <button class="queue-choice-card" type="button" data-queue-choice="supplements">
+            <div class="queue-choice-art supplements-art"></div>
+            <div class="queue-choice-copy">
+              <strong>Supplements</strong>
+              <span>Iron, zinc, magnesium, creatine</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="settingsOverlay" class="settings-overlay hidden">
+      <div class="settings-shell">
+        <div class="settings-top">
+          <div>
+            <span class="eyebrow">Settings</span>
+            <h2>Life system settings</h2>
+          </div>
+
+          <button
+            id="closeSettings"
+            class="queue-picker-close"
+            type="button"
+            aria-label="Close settings"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-block">
+            <span class="eyebrow">Salah times</span>
+            <label><span class="field-label">Fajr</span><input id="fajrTime" type="time" /></label>
+            <label><span class="field-label">Dhuhr</span><input id="dhuhrTime" type="time" /></label>
+            <label><span class="field-label">Asr</span><input id="asrTime" type="time" /></label>
+            <label><span class="field-label">Maghrib</span><input id="maghribTime" type="time" /></label>
+            <label><span class="field-label">Isha</span><input id="ishaTime" type="time" /></label>
+          </div>
+
+          <div class="settings-block">
+            <span class="eyebrow">Body</span>
+            <label><span class="field-label">Height</span><input id="height" type="text" /></label>
+            <label><span class="field-label">Weight</span><input id="weight" type="number" /></label>
+            <label><span class="field-label">Sleep goal</span><input id="sleepGoal" type="number" /></label>
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button id="saveSettings" class="primary-action" type="button">Save settings</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
