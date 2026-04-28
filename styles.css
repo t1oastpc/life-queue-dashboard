@@ -1651,3 +1651,53 @@ canvas {
     font-size: 1.2rem;
   }
 }
+/* Desktop responsiveness fix */
+
+.app-shell {
+  width: min(1440px, calc(100vw - 24px));
+}
+
+.queue-stage {
+  grid-template-columns: 240px minmax(720px, 1fr) 240px;
+}
+
+.queue-party-lane {
+  width: min(1040px, 100%);
+}
+
+@media (min-width: 1500px) {
+  .queue-center-column {
+    transform: scale(1.08);
+    transform-origin: top center;
+  }
+
+  .queue-left-hud {
+    margin-top: 130px;
+    padding-left: 46px;
+  }
+}
+
+@media (min-width: 1700px) {
+  .queue-center-column {
+    transform: scale(1.16);
+  }
+
+  .queue-stage {
+    grid-template-columns: 300px minmax(840px, 1fr) 300px;
+  }
+
+  .queue-left-hud {
+    padding-left: 70px;
+  }
+}
+
+@media (max-height: 850px) and (min-width: 1300px) {
+  .queue-center-column {
+    transform: scale(0.96);
+    transform-origin: top center;
+  }
+
+  .queue-bottom-actions {
+    margin-bottom: 8px !important;
+  }
+}
