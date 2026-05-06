@@ -1058,55 +1058,7 @@ function parseStoredMetric(value, options = {}) {
   return options.allowZero ? 0 : 0;
 }
 
-/* CAREER */
 
-function renderCareerTab() {
-  const shell = document.getElementById("careerShell");
-  if (!shell) return;
-
-  const history = [...state.history].sort((a, b) => b.date.localeCompare(a.date));
-  const currentRR = history.length ? Number(history[0].rrRunning || 0) : 0;
-  const rankName = getRankName(currentRR);
-  const rrInTier = currentRR % 100;
-  const fillPercent = Math.max(0, Math.min(100, rrInTier));
-
-  shell.innerHTML = `
-    <div class="career-rank-icon-wrap">
-      <img class="rank-image" src="./assets/iron1.png" alt="Rank icon" />
-    </div>
-    <h2 class="career-rank-name">${rankName}</h2>
-    <div class="career-rank-bar-wrap">
-      <div class="career-rank-bar">
-        <div class="career-rank-bar-fill" style="width:${fillPercent}%"></div>
-      </div>
-      <div class="career-rank-bar-labels">
-        <span>Rank rating</span>
-        <strong>${rrInTier}/100</strong>
-      </div>
-    </div>
-    <div class="career-match-filter">
-      <div class="career-filter-pill">All modes</div>
-    </div>
-    <div class="career-match-list">
-      ${history.map(renderHistoryRow).join("")}
-    </div>
-  `;
-}
-
-function renderHistoryRow(item) {
-  const win = item.result === "victory";
-  const rrText = `${item.rrDelta > 0 ? "+" : ""}${item.rrDelta}`;
-  return `
-    <div class="career-match-row ${win ? "win" : "loss"}">
-      <div class="career-match-main">
-        <div class="career-kda">${item.kda}</div>
-        <div class="career-score">${formatCareerDate(item.date)} · RR ${rrText}</div>
-      </div>
-      <div class="career-result">${win ? "Victory" : "Defeat"}</div>
-      <div class="career-scoreline">${item.scoreline}</div>
-    </div>
-  `;
-}
 
 /* PROGRESS - WEIGHT ONLY */
 
@@ -1650,3 +1602,460 @@ function num(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
+/* =========================================================
+   RR SYSTEM PATCH
+   Must-do tasks for RR:
+   - 5 daily salah
+   - gym
+   - 10k steps
+   - weight charted
+   - at least 2 supplements
+   Everything else still counts toward 19/19, but is bonus/low value.
+========================================================= */
+
+function summarizeCurrentDay() {
+  const p = state.queueForms.physical;
+  const d = state.queueForms.deen;
+  const r = state.queueForms.routines;
+  const s = state.queueForms.supplements;
+
+  const supplementsTaken = Object.values(s).filter((x) => x === "yes").length;
+
+  const mustChecks = [
+    d.fajr === "yes",
+    d.dhuhr === "yes",
+    d.asr === "yes",
+    d.maghrib === "yes",
+    d.isha === "yes",
+    p.gymWent === "yes",
+    Number(p.steps) >= 10000,
+    Number(p.weightLogged) > 0,
+    supplementsTaken >= 2
+  ];
+
+  const allChecks = [
+    Number(p.weightLogged) > 0,
+    p.gymWent === "yes",
+    Number(p.calories) > 0,
+    !!p.sleptAt && !!p.wokeAt,
+    Number(p.waterOz) > 0,
+    Number(p.steps) >= 10000,
+
+    d.fajr === "yes",
+    d.dhuhr === "yes",
+    d.asr === "yes",
+    d.maghrib === "yes",
+    d.isha === "yes",
+    Number(d.quranPages) > 0,
+
+    r.morningAcne === "yes",
+    r.nightAcne === "yes",
+    Number(r.screenHours) > 0,
+
+    s.iron === "yes",
+    s.zinc === "yes",
+    s.magnesium === "yes",
+    s.creatine === "yes"
+  ];
+
+  const optionalChecks = [
+    d.fajrSunnah === "yes",
+    d.dhuhrSunnah === "yes",
+    d.maghribSunnah === "yes",
+    d.ishaSunnah === "yes",
+    d.tahajjud === "yes",
+    Number(p.calories) > 0,
+    Number(p.waterOz) > 0,
+    !!p.sleptAt && !!p.wokeAt,
+    Number(d.quranPages) > 0,
+    r.morningAcne === "yes",
+    r.nightAcne === "yes",
+    Number(r.screenHours) > 0,
+    supplementsTaken === 4
+  ];
+
+  const mustDone = mustChecks.filter(Boolean).length;
+  const mustTotal = mustChecks.length;
+
+  const requiredDone = allChecks.filter(Boolean).length;
+  const requiredTotal = allChecks.length;
+
+  const optionalDone = optionalChecks.filter(Boolean).length;
+
+  const gotMusts = mustDone === mustTotal;
+
+  let rrDelta = 0;
+
+  if (gotMusts) {
+    rrDelta = 8 + Math.min(10, requiredDone - mustDone) + Math.min(5, optionalDone);
+  } else {
+    rrDelta = -Math.min(18, (mustTotal - mustDone) * 3);
+  }
+
+  const result = gotMusts ? "victory" : "defeat";
+
+  return {
+    mustDone,
+    mustTotal,
+    requiredDone,
+    requiredTotal,
+    optionalDone,
+    result,
+    rrDelta,
+
+    weight: parseStoredMetric(p.weightLogged),
+    calories: parseStoredMetric(p.calories),
+    steps: parseStoredMetric(p.steps),
+    screenHours: parseStoredMetric(r.screenHours, { allowZero: true }),
+
+    gymWent: p.gymWent === "yes",
+    allSalah:
+      d.fajr === "yes" &&
+      d.dhuhr === "yes" &&
+      d.asr === "yes" &&
+      d.maghrib === "yes" &&
+      d.isha === "yes",
+    sunnahCount: optionalChecks.slice(0, 4).filter(Boolean).length,
+    tahajjud: d.tahajjud === "yes",
+    quranPages: parseStoredMetric(d.quranPages, { allowZero: true }),
+    waterOz: parseStoredMetric(p.waterOz, { allowZero: true }),
+    sleptAt: p.sleptAt,
+    wokeAt: p.wokeAt,
+    ateAfterMaghrib: p.ateAfterMaghrib === "yes",
+    morningAcne: r.morningAcne === "yes",
+    nightAcne: r.nightAcne === "yes",
+    supplementsTaken,
+    formsSnapshot: JSON.parse(JSON.stringify(state.queueForms))
+  };
+}
+
+function syncLiveHistoryFromForms() {
+  const today = getTodayDateString();
+  const summary = summarizeCurrentDay();
+
+  state.history = state.history.filter((x) => x.id !== "live-today" && x.date !== today);
+
+  const historyWithoutToday = [...state.history].sort((a, b) => b.date.localeCompare(a.date));
+  const previousRR = historyWithoutToday.length ? Number(historyWithoutToday[0].rrRunning || 0) : 0;
+  const rrRunning = Math.max(0, previousRR + summary.rrDelta);
+
+  const liveEntry = {
+    id: "live-today",
+    date: today,
+    result: summary.result,
+    rrDelta: summary.rrDelta,
+    rrRunning,
+    scoreline: `${summary.weight || 0} lb`,
+    kda: `${summary.requiredDone}/${summary.requiredTotal}/${summary.optionalDone}`,
+    weight: summary.weight,
+    calories: summary.calories,
+    steps: summary.steps,
+    screenHours: summary.screenHours,
+    summary
+  };
+
+  state.history.unshift(liveEntry);
+  state.history.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+const CAREER_AGENT_IMAGE = "./assets/jett.png";
+const CAREER_RANK_IMAGE = "./assets/iron1.png";
+
+const CAREER_MAP_IMAGES = [
+  "./assets/map1.png",
+  "./assets/map2.png",
+  "./assets/map3.png",
+  "./assets/map4.png",
+  "./assets/map5.png",
+  "./assets/map6.png",
+  "./assets/map7.png"
+];
+
+function getStableMapForDate(date) {
+  let hash = 0;
+  const text = String(date || "");
+
+  for (let i = 0; i < text.length; i++) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+
+  return CAREER_MAP_IMAGES[hash % CAREER_MAP_IMAGES.length];
+}
+
+function getHistorySteps(item) {
+  return Number(
+    item.steps ??
+    item.summary?.steps ??
+    item.day?.steps ??
+    0
+  );
+}
+
+function renderHistoryRow(item) {
+  const win = item.result === "victory";
+  const rr = Number(item.rrDelta || 0);
+  const rrText = `${rr > 0 ? "+" : ""}${rr}`;
+  const steps = getHistorySteps(item).toLocaleString();
+  const date = formatCareerDate(item.date);
+  const mapImage = getStableMapForDate(item.date);
+
+  return `
+    <button class="career-match-row ${win ? "win" : "loss"}" type="button" data-career-date="${item.date}">
+
+      <img src="${mapImage}" alt="" onerror="this.style.display='none'" class="career-row-map-bg" />
+
+      <div class="career-agent-box">
+        <img src="./assets/jett.png" alt="Jett" onerror="this.style.display='none'" />
+      </div>
+
+      <div class="career-rank-small">
+        <img src="./assets/iron1.png" alt="Rank" onerror="this.style.display='none'" />
+        <span>${rrText}</span>
+      </div>
+
+      <div class="career-match-main">
+        <div class="career-kda">KDA &nbsp; ${item.kda || "0/0/0"}</div>
+        <div class="career-score">STEPS &nbsp; ${steps}</div>
+      </div>
+
+      <div class="career-result-block">
+        <div class="career-result">${win ? "VICTORY" : "DEFEAT"}</div>
+        <div class="career-date">${date}</div>
+      </div>
+
+    </button>
+  `;
+}
+function getCareerMapImage(dateString) {
+  const maps = [
+    "./assets/map1.png",
+    "./assets/map2.png",
+    "./assets/map3.png",
+    "./assets/map4.png",
+    "./assets/map5.png",
+    "./assets/map6.png",
+    "./assets/map7.png"
+  ];
+
+  let seed = 0;
+  for (let i = 0; i < dateString.length; i++) {
+    seed += dateString.charCodeAt(i) * (i + 7);
+  }
+
+  return maps[seed % maps.length];
+}
+
+function renderCareerTab() {
+  const shell = document.getElementById("careerShell");
+  if (!shell) return;
+
+  const history = [...state.history].sort((a, b) => b.date.localeCompare(a.date));
+  const currentRR = history.length ? Number(history[0].rrRunning || 0) : 0;
+  const rankName = getRankName(currentRR);
+  const rrInTier = currentRR % 100;
+  const fillPercent = Math.max(0, Math.min(100, rrInTier));
+
+  shell.innerHTML = `
+    <div class="career-rank-top">
+      <img class="rank-image" src="./assets/iron1.png" alt="Iron 1 rank icon" />
+      <h2 class="career-rank-name">${rankName}</h2>
+      <div class="career-rank-bar-wrap">
+        <div class="career-rank-bar">
+          <div class="career-rank-bar-fill" style="width:${fillPercent}%"></div>
+        </div>
+        <div class="career-rank-bar-labels">
+          <span>Rank rating</span>
+          <strong>${rrInTier}/100</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="career-match-filter">
+      <div class="career-filter-pill">All modes</div>
+    </div>
+
+    <div class="career-match-list">
+      ${history.map(renderHistoryRow).join("")}
+    </div>
+  `;
+
+  document.querySelectorAll("[data-career-date]").forEach((row) => {
+    row.addEventListener("click", () => {
+      openCareerEditModal(row.dataset.careerDate);
+    });
+  });
+}
+
+function isEditableCareerDate(dateString) {
+  return true;
+}
+
+function openCareerEditModal(dateString) {
+  const entry = state.history.find((x) => x.date === dateString);
+  if (!entry) return;
+
+  const editable = isEditableCareerDate(dateString);
+  const summary = entry.summary || {};
+  const snap = summary.formsSnapshot || state.queueForms;
+
+  const old = document.getElementById("careerEditModal");
+  if (old) old.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "careerEditModal";
+  modal.className = "career-day-modal";
+
+  modal.innerHTML = `
+    <div class="career-day-card">
+      <button class="career-day-close" type="button">×</button>
+
+      <div class="career-day-top">
+        <div>
+          <p class="career-day-label">DAY REVIEW</p>
+          <h2>${formatCareerDate(dateString)}</h2>
+        </div>
+        <div class="career-day-result ${entry.result}">
+          ${entry.result === "victory" ? "VICTORY" : "DEFEAT"}
+        </div>
+      </div>
+
+      <div class="career-day-rr">
+        <span>${entry.rrDelta > 0 ? "+" : ""}${entry.rrDelta} RR</span>
+        <small>${editable ? "Editable" : "Locked"}</small>
+      </div>
+
+      <div class="career-edit-grid">
+        <label>Weight
+          <input id="editWeight" type="number" step="0.1" value="${snap.physical?.weightLogged || ""}" ${editable ? "" : "disabled"} />
+        </label>
+
+        <label>Gym
+          <select id="editGym" ${editable ? "" : "disabled"}>
+            <option value="no" ${snap.physical?.gymWent === "no" ? "selected" : ""}>No</option>
+            <option value="yes" ${snap.physical?.gymWent === "yes" ? "selected" : ""}>Yes</option>
+          </select>
+        </label>
+
+        <label>Steps — 10,000+ needed
+          <input id="editSteps" type="number" value="${snap.physical?.steps || ""}" ${editable ? "" : "disabled"} />
+        </label>
+
+        <label>Calories
+          <input id="editCalories" type="number" value="${snap.physical?.calories || ""}" ${editable ? "" : "disabled"} />
+        </label>
+
+        <label>Water oz
+          <input id="editWater" type="number" value="${snap.physical?.waterOz || ""}" ${editable ? "" : "disabled"} />
+        </label>
+
+        <label>Fajr
+          <select id="editFajr" ${editable ? "" : "disabled"}><option value="no" ${snap.deen?.fajr === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.deen?.fajr === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+
+        <label>Dhuhr
+          <select id="editDhuhr" ${editable ? "" : "disabled"}><option value="no" ${snap.deen?.dhuhr === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.deen?.dhuhr === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+
+        <label>Asr
+          <select id="editAsr" ${editable ? "" : "disabled"}><option value="no" ${snap.deen?.asr === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.deen?.asr === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+
+        <label>Maghrib
+          <select id="editMaghrib" ${editable ? "" : "disabled"}><option value="no" ${snap.deen?.maghrib === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.deen?.maghrib === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+
+        <label>Isha
+          <select id="editIsha" ${editable ? "" : "disabled"}><option value="no" ${snap.deen?.isha === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.deen?.isha === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+
+        <label>Quran pages
+          <input id="editQuran" type="number" value="${snap.deen?.quranPages || ""}" ${editable ? "" : "disabled"} />
+        </label>
+
+        <label>Iron
+          <select id="editIron" ${editable ? "" : "disabled"}><option value="no" ${snap.supplements?.iron === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.supplements?.iron === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+
+        <label>Zinc
+          <select id="editZinc" ${editable ? "" : "disabled"}><option value="no" ${snap.supplements?.zinc === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.supplements?.zinc === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+
+        <label>Magnesium
+          <select id="editMagnesium" ${editable ? "" : "disabled"}><option value="no" ${snap.supplements?.magnesium === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.supplements?.magnesium === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+
+        <label>Creatine
+          <select id="editCreatine" ${editable ? "" : "disabled"}><option value="no" ${snap.supplements?.creatine === "no" ? "selected" : ""}>No</option><option value="yes" ${snap.supplements?.creatine === "yes" ? "selected" : ""}>Yes</option></select>
+        </label>
+      </div>
+
+      <div class="career-day-status">
+        ${editable ? "You can change today or yesterday only." : "Locked. Only today and yesterday can be changed."}
+      </div>
+
+      ${editable ? `<button id="saveCareerEdit" class="primary-action" type="button">SAVE CHANGES</button>` : ""}
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.querySelector(".career-day-close").addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.remove();
+  });
+
+  document.getElementById("saveCareerEdit")?.addEventListener("click", () => {
+    const newForms = JSON.parse(JSON.stringify(snap));
+
+    newForms.physical.weightLogged = document.getElementById("editWeight").value;
+    newForms.physical.gymWent = document.getElementById("editGym").value;
+    newForms.physical.steps = document.getElementById("editSteps").value;
+    newForms.physical.calories = document.getElementById("editCalories").value;
+    newForms.physical.waterOz = document.getElementById("editWater").value;
+
+    newForms.deen.fajr = document.getElementById("editFajr").value;
+    newForms.deen.dhuhr = document.getElementById("editDhuhr").value;
+    newForms.deen.asr = document.getElementById("editAsr").value;
+    newForms.deen.maghrib = document.getElementById("editMaghrib").value;
+    newForms.deen.isha = document.getElementById("editIsha").value;
+    newForms.deen.quranPages = document.getElementById("editQuran").value;
+
+    newForms.supplements.iron = document.getElementById("editIron").value;
+    newForms.supplements.zinc = document.getElementById("editZinc").value;
+    newForms.supplements.magnesium = document.getElementById("editMagnesium").value;
+    newForms.supplements.creatine = document.getElementById("editCreatine").value;
+
+    const oldForms = state.queueForms;
+    state.queueForms = newForms;
+    const newSummary = summarizeCurrentDay();
+    state.queueForms = oldForms;
+
+    entry.summary = newSummary;
+    entry.result = newSummary.result;
+    entry.rrDelta = newSummary.rrDelta;
+    entry.kda = `${newSummary.requiredDone}/${newSummary.requiredTotal}/${newSummary.optionalDone}`;
+    entry.weight = newSummary.weight;
+    entry.steps = newSummary.steps;
+    entry.calories = newSummary.calories;
+    entry.scoreline = `${newSummary.weight || 0} lb`;
+
+    recomputeCareerRR();
+    saveState();
+    modal.remove();
+    renderCareerTab();
+    renderProgressCharts();
+  });
+}
+
+function recomputeCareerRR() {
+  const sorted = [...state.history].sort((a, b) => a.date.localeCompare(b.date));
+  let rr = 0;
+
+  sorted.forEach((entry) => {
+    rr = Math.max(0, rr + Number(entry.rrDelta || 0));
+    entry.rrRunning = rr;
+  });
+
+  state.history = sorted.sort((a, b) => b.date.localeCompare(a.date));
+}
+
